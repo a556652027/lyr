@@ -1,4 +1,3 @@
-// 慶祝動畫
 function celebrate() {
     // 播放音樂
     playBirthdayMusic();
@@ -19,12 +18,34 @@ function celebrate() {
     }, 150);
 }
 
-// 播放生日快樂歌曲
+// YouTube 播放器全域變數
+let youtubePlayer;
+
+// 初始化 YouTube IFrame API
+function onYouTubeIframeAPIReady() {
+    youtubePlayer = new YT.Player('youtube-player-container', {
+        height: '0',
+        width: '0',
+        videoId: 'LZPmiHq8AJE', // 海上花 - 雨晴你
+        events: {
+            'onReady': onPlayerReady
+        },
+        playerVars: {
+            'autoplay': 0,
+            'controls': 0,
+            'modestbranding': 1
+        }
+    });
+}
+
+function onPlayerReady(event) {
+    console.log('YouTube 播放器已準備好');
+}
+
+// 播放生日音樂
 function playBirthdayMusic() {
-    const audio = document.getElementById('birthday-music');
-    if (audio) {
-        audio.currentTime = 0;
-        audio.play().catch(err => console.log('無法播放音樂:', err));
+    if (youtubePlayer && youtubePlayer.playVideo) {
+        youtubePlayer.playVideo();
     }
 }
 
