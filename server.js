@@ -18,7 +18,10 @@ const mimeTypes = {
 
 const server = http.createServer((req, res) => {
     // 安全的路徑處理
-    let filePath = '.' + (req.url === '/' ? '/index.html' : req.url);
+    const requestUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    const pathname = requestUrl.pathname;
+
+    let filePath = '.' + (pathname === '/' ? '/index.html' : pathname);
     filePath = path.normalize(filePath);
     
     // 防止目錄遍歷攻擊
@@ -42,17 +45,15 @@ const server = http.createServer((req, res) => {
             }
         } else {
             // 設定快取頭部
-            if (ext === '.html') {
-                res.writeHead(200, {
-                    'Content-Type': contentType,
-                    'Cache-Control': 'no-cache'
-                });
-            } else {
-                res.writeHead(200, {
-                    'Content-Type': contentType,
-                    'Cache-Control': 'public, max-age=31536000'
-                });
-            }
+            const noCacheExts = new Set(['.html', '.css', '.js', '.json']);
+            const cacheControl = noCacheExts.has(ext)
+                ? 'no-cache'
+                : 'public, max-age=31536000, immutable';
+
+            res.writeHead(200, {
+                'Content-Type': contentType,
+                'Cache-Control': cacheControl
+            });
             res.end(data);
         }
     });
