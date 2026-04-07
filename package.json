@@ -1,0 +1,17 @@
+{
+  "name": "birthday-celebration-website",
+  "version": "1.0.0",
+  "description": "一個簡單漂亮的生日慶祝網站",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "birthday",
+    "celebration",
+    "website"
+  ],
+  "author": "",
+  "license": "MIT"
+}

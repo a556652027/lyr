@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生日快樂 🎉</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="confetti" id="confetti"></div>
+        
+        <header class="header">
+            <h1 class="title">🎂 生日快樂 🎂</h1>
+            <p class="subtitle">祝你生日快樂！</p>
+        </header>
+
+        <main class="content">
+            <div class="balloon" id="balloon1">🎈</div>
+            <div class="balloon" id="balloon2">🎈</div>
+            <div class="balloon" id="balloon3">🎈</div>
+            <div class="balloon" id="balloon4">🎈</div>
+            
+            <div class="cake-section">
+                <div class="cake">
+                    <div class="candle">🕯️</div>
+                </div>
+            </div>
+
+            <div class="message-box">
+                <p>🎊 希望今年你會更快樂、更健康 🎊</p>
+                <p class="message-sub">願所有的美好都伴隨著你！</p>
+            </div>
+
+            <div class="wishes">
+                <div class="wish-item">☀️ 陽光般的笑容</div>
+                <div class="wish-item">💪 強大的力量</div>
+                <div class="wish-item">🌟 璀璨的未來</div>
+                <div class="wish-item">❤️ 滿滿的愛</div>
+            </div>
+
+            <button class="birthday-btn" onclick="celebrate()">🎉 點擊慶祝 🎉</button>
+        </main>
+
+        <footer class="footer">
+            <p>祝你生日快樂！🎉🎂🎈</p>
+        </footer>
+    </div>
+
+    <audio id="birthday-music" preload="auto">
+        <source src="data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAQB8AAAB9AAACABAAZGF0YQIAAAAAAA==" type="audio/wav">
+    </audio>
+
+    <script src="script.js"></script>
+</body>
+</html>
