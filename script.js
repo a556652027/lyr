@@ -215,6 +215,19 @@
         `
     };
 
+    const KuromiRightPop = {
+        props: {
+            visible: { type: Boolean, default: false }
+        },
+        template: `
+            <div
+                class="kuromi-right-pop"
+                :class="{ 'is-visible': visible }"
+                aria-hidden="true"
+            ></div>
+        `
+    };
+
     const HeroSection = {
         emits: ['play'],
         template: `
@@ -254,7 +267,8 @@
                     v-for="(item, index) in items"
                     :key="item.title"
                     class="message-box"
-                    :data-kuromi-left-trigger="index === 5 ? 'test6' : null"
+                    :data-kuromi-left-trigger="index === 1 ? 'test2' : null"
+                    :data-kuromi-right-trigger="index === 5 ? 'test6' : null"
                 >
                     <p>{{ item.title }}</p>
                     <p v-if="item.subtitle" class="message-sub">{{ item.subtitle }}</p>
@@ -264,12 +278,14 @@
     };
 
     const App = {
-        components: { HeroSection, KuromiLeftPop, SideNavCursor, TestContent },
+        components: { HeroSection, KuromiLeftPop, KuromiRightPop, SideNavCursor, TestContent },
         setup() {
             const { play } = useYouTubePlayer();
             const isKuromiLeftVisible = ref(false);
+            const isKuromiRightVisible = ref(false);
             let cleanupSmoothScroll = () => {};
             let kuromiLeftObserver = null;
+            let kuromiRightObserver = null;
 
             function cleanupKuromiLeftObserver() {
                 if (!kuromiLeftObserver) return;
@@ -280,7 +296,7 @@
             function setupKuromiLeftObserver() {
                 cleanupKuromiLeftObserver();
 
-                const triggerEl = document.querySelector('[data-kuromi-left-trigger="test6"]');
+                const triggerEl = document.querySelector('[data-kuromi-left-trigger="test2"]');
                 if (!triggerEl) return;
                 if (typeof IntersectionObserver !== 'function') return;
 
@@ -299,24 +315,58 @@
                 kuromiLeftObserver.observe(triggerEl);
             }
 
+            function cleanupKuromiRightObserver() {
+                if (!kuromiRightObserver) return;
+                kuromiRightObserver.disconnect();
+                kuromiRightObserver = null;
+            }
+
+            function setupKuromiRightObserver() {
+                cleanupKuromiRightObserver();
+
+                const triggerEl = document.querySelector('[data-kuromi-right-trigger="test6"]');
+                if (!triggerEl) return;
+                if (typeof IntersectionObserver !== 'function') return;
+
+                kuromiRightObserver = new IntersectionObserver(
+                    (entries) => {
+                        const entry = entries[0];
+                        isKuromiRightVisible.value = Boolean(entry && entry.isIntersecting);
+                    },
+                    {
+                        root: null,
+                        rootMargin: '-35% 0px -35% 0px',
+                        threshold: 0
+                    }
+                );
+
+                kuromiRightObserver.observe(triggerEl);
+            }
+
             onMounted(() => {
                 cleanupSmoothScroll = useSmoothWheelScroll();
-                nextTick().then(setupKuromiLeftObserver);
+                nextTick().then(() => {
+                    setupKuromiLeftObserver();
+                    setupKuromiRightObserver();
+                });
             });
 
             onBeforeUnmount(() => {
                 cleanupSmoothScroll();
                 cleanupKuromiLeftObserver();
+                cleanupKuromiRightObserver();
             });
 
             return {
                 isKuromiLeftVisible,
+                isKuromiRightVisible,
                 playBirthdayMusic: play
             };
         },
         template: `
             <SideNavCursor />
             <KuromiLeftPop :visible="isKuromiLeftVisible" />
+            <KuromiRightPop :visible="isKuromiRightVisible" />
             <div class="container">
                 <HeroSection @play="playBirthdayMusic" />
                 <TestContent />

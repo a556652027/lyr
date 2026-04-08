@@ -54,7 +54,7 @@ body::before {
     background-repeat: no-repeat;
     background-position: center;
     background-size: contain;
-    opacity: 0.4;
+    opacity: 0.6;
     pointer-events: none;
     z-index: -1;
 }
@@ -84,8 +84,34 @@ body::before {
     --kuromi-left-x: var(--kuromi-left-offset);
 }
 
+.kuromi-right-pop {
+    --kuromi-right-size: 220px;
+    --kuromi-right-offset: 12px;
+    --kuromi-right-x: calc(110% + var(--kuromi-right-offset));
+    position: fixed;
+    right: 0;
+    top: 50%;
+    width: var(--kuromi-right-size);
+    height: var(--kuromi-right-size);
+    background-image: url('img/kuromi_right.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    pointer-events: none;
+    z-index: 2;
+    transform: translate3d(var(--kuromi-right-x), -50%, 0);
+    transition: transform 360ms cubic-bezier(0.2, 0.75, 0.2, 1);
+    will-change: transform;
+    filter: drop-shadow(0 12px 26px rgba(0, 0, 0, 0.35));
+}
+
+.kuromi-right-pop.is-visible {
+    --kuromi-right-x: calc(var(--kuromi-right-offset) * -1);
+}
+
 @media (prefers-reduced-motion: reduce) {
-    .kuromi-left-pop {
+    .kuromi-left-pop,
+    .kuromi-right-pop {
         transition: none;
     }
 }
@@ -232,6 +258,10 @@ body::before {
 
     .kuromi-left-pop {
         --kuromi-left-size: 180px;
+    }
+
+    .kuromi-right-pop {
+        --kuromi-right-size: 180px;
     }
 
     .message-box {
