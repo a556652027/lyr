@@ -4,6 +4,34 @@
     box-sizing: border-box;
 }
 
+:root {
+    --viewport-block: 100vh;
+}
+
+@supports (height: 100svh) {
+    :root {
+        --viewport-block: 100svh;
+    }
+}
+
+@supports (height: 100lvh) {
+    :root {
+        --viewport-block: 100lvh;
+    }
+}
+
+html,
+body {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+}
+
 body {
     font-family: 'Arial', sans-serif;
     background: linear-gradient(135deg, #ff6b9d 0%, #c06c84 25%, #6c5ce7 50%, #a29bfe 75%, #fd79a8 100%);
@@ -11,14 +39,17 @@ body {
     animation: gradient 15s ease infinite;
     position: relative;
     z-index: 0;
-    min-height: 100vh;
+    min-height: var(--viewport-block);
     overflow-x: hidden;
 }
 
 body::before {
     content: '';
     position: fixed;
-    inset: 0;
+    left: 0;
+    top: 0;
+    right: 0;
+    height: var(--viewport-block);
     background-image: url('img/kuromi_background.jpg');
     background-repeat: no-repeat;
     background-position: center;
@@ -55,7 +86,7 @@ body::before {
     position: relative;
     z-index: 1;
     width: 100%;
-    min-height: 100vh;
+    min-height: var(--viewport-block);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -66,7 +97,7 @@ body::before {
 
 .hero {
     width: 100%;
-    min-height: 100vh;
+    min-height: var(--viewport-block);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -96,12 +127,6 @@ body::before {
     animation: bounce 2s infinite;
 }
 
-.subtitle {
-    font-size: 1.5rem;
-    font-weight: 300;
-    letter-spacing: 2px;
-}
-
 @keyframes bounce {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-20px); }
@@ -121,91 +146,6 @@ body::before {
     justify-content: center;
 }
 
-/* 氣球動畫 */
-.balloon {
-    position: absolute;
-    font-size: 3rem;
-    animation: float 6s ease-in-out infinite;
-    cursor: pointer;
-}
-
-#balloon1 { 
-    left: 10%; 
-    top: 20%;
-    animation-delay: 0s;
-}
-
-#balloon2 { 
-    right: 10%; 
-    top: 30%;
-    animation-delay: 1s;
-}
-
-#balloon3 { 
-    left: 5%; 
-    bottom: 20%;
-    animation-delay: 2s;
-}
-
-#balloon4 { 
-    right: 5%; 
-    bottom: 30%;
-    animation-delay: 1.5s;
-}
-
-@keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-50px); }
-}
-
-.balloon:hover {
-    transform: scale(1.2);
-    transition: transform 0.3s ease;
-}
-
-/* 蛋糕部分 */
-.cake-section {
-    margin: 20px 0;
-    animation: slideIn 1s ease-out;
-}
-
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.cake {
-    font-size: 5rem;
-    position: relative;
-    animation: wobble 2s infinite;
-}
-
-@keyframes wobble {
-    0%, 100% { transform: rotate(-1deg); }
-    50% { transform: rotate(1deg); }
-}
-
-.candle {
-    font-size: 2rem;
-    animation: flicker 0.15s infinite;
-    position: absolute;
-    top: -30px;
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-@keyframes flicker {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
-}
-
-/* 訊息盒 */
 .message-box {
     background: rgba(255, 255, 255, 0.2);
     padding: 30px;
@@ -230,33 +170,6 @@ body::before {
     margin-top: 15px;
 }
 
-/* 祝願 */
-.wishes {
-    display: flex;
-    gap: 15px;
-    flex-wrap: wrap;
-    justify-content: center;
-    margin: 30px 0;
-    max-width: 600px;
-}
-
-.wish-item {
-    background: rgba(255, 255, 255, 0.3);
-    padding: 15px 25px;
-    border-radius: 50px;
-    font-size: 1.1rem;
-    font-weight: bold;
-    animation: fadeIn 2.5s ease-in;
-    backdrop-filter: blur(5px);
-    transition: all 0.3s ease;
-}
-
-.wish-item:hover {
-    background: rgba(255, 255, 255, 0.5);
-    transform: scale(1.05);
-}
-
-/* 按鈕 */
 .birthday-btn {
     padding: 15px 40px;
     font-size: 1.3rem;
@@ -281,55 +194,21 @@ body::before {
     transform: scale(0.95);
 }
 
-/* 頁腳 */
-.footer {
-    position: absolute;
-    bottom: 20px;
-    text-align: center;
-    font-size: 1.2rem;
-}
-
-/* 手機響應 */
 @media (max-width: 768px) {
     .title {
         font-size: 2.5rem;
     }
-    
-    .subtitle {
-        font-size: 1.1rem;
-    }
-    
-    .cake {
-        font-size: 3rem;
-    }
-    
+
     .message-box {
         padding: 20px;
     }
-    
+
     .message-box p {
         font-size: 1.2rem;
     }
-    
+
     .birthday-btn {
         padding: 12px 30px;
         font-size: 1.1rem;
-    }
-}
-
-/* 彩紙動畫 */
-.confetti-piece {
-    position: fixed;
-    width: 10px;
-    height: 10px;
-    background: #ff6b9d;
-    pointer-events: none;
-    animation: confetti-fall 3s linear forwards;
-}
-
-@keyframes confetti-fall {
-    to {
-        transform: translateY(100vh) rotate(720deg);
-        opacity: 0;
     }
 }
