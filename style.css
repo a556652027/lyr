@@ -111,7 +111,8 @@ body::before {
 
 @media (prefers-reduced-motion: reduce) {
     .kuromi-left-pop,
-    .kuromi-right-pop {
+    .kuromi-right-pop,
+    .sidenav-cursor {
         transition: none;
     }
 }
@@ -130,7 +131,15 @@ body::before {
     pointer-events: none;
     z-index: 2;
     transform: translateY(0);
-    will-change: transform;
+    transform-origin: center center;
+    transition: transform 360ms cubic-bezier(0.2, 0.75, 0.2, 1), right 360ms cubic-bezier(0.2, 0.75, 0.2, 1), top 360ms cubic-bezier(0.2, 0.75, 0.2, 1);
+    will-change: transform, right, top;
+}
+
+.sidenav-cursor.is-at-bottom {
+    right: 50%;
+    top: 50%;
+    transform: translate3d(50%, -50%, 0) scale(2.1);
 }
 
 @keyframes gradient {
@@ -204,6 +213,7 @@ body::before {
 }
 
 .message-box {
+    position: relative;
     background: rgba(255, 255, 255, 0.2);
     padding: 30px;
     border-radius: 20px;
@@ -213,6 +223,13 @@ body::before {
     text-align: center;
     max-width: 500px;
     animation: fadeIn 2s ease-in;
+}
+
+.popup-trigger-anchor {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
 }
 
 .message-box p {

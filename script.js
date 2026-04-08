@@ -160,6 +160,15 @@
                 const clientHeight = doc.clientHeight || window.innerHeight || 0;
 
                 const maxScroll = Math.max(0, scrollHeight - clientHeight);
+                const isAtBottom = maxScroll > 0 && scrollTop >= maxScroll - 2;
+
+                if (isAtBottom) {
+                    cursor.classList.add('is-at-bottom');
+                    cursor.style.transform = '';
+                    return;
+                }
+
+                cursor.classList.remove('is-at-bottom');
                 const progress = maxScroll === 0 ? 0 : Math.min(1, Math.max(0, scrollTop / maxScroll));
 
                 const topPadding = Number.parseFloat(getComputedStyle(cursor).top) || 0;
@@ -267,9 +276,19 @@
                     v-for="(item, index) in items"
                     :key="item.title"
                     class="message-box"
-                    :data-kuromi-left-trigger="index === 1 ? 'test2' : null"
-                    :data-kuromi-right-trigger="index === 5 ? 'test6' : null"
                 >
+                    <span
+                        v-if="index === 1"
+                        class="popup-trigger-anchor"
+                        data-kuromi-left-anchor="test2"
+                        aria-hidden="true"
+                    ></span>
+                    <span
+                        v-if="index === 5"
+                        class="popup-trigger-anchor"
+                        data-kuromi-right-anchor="test6"
+                        aria-hidden="true"
+                    ></span>
                     <p>{{ item.title }}</p>
                     <p v-if="item.subtitle" class="message-sub">{{ item.subtitle }}</p>
                 </div>
@@ -296,7 +315,7 @@
             function setupKuromiLeftObserver() {
                 cleanupKuromiLeftObserver();
 
-                const triggerEl = document.querySelector('[data-kuromi-left-trigger="test2"]');
+                const triggerEl = document.querySelector('[data-kuromi-left-anchor="test2"]');
                 if (!triggerEl) return;
                 if (typeof IntersectionObserver !== 'function') return;
 
@@ -324,7 +343,7 @@
             function setupKuromiRightObserver() {
                 cleanupKuromiRightObserver();
 
-                const triggerEl = document.querySelector('[data-kuromi-right-trigger="test6"]');
+                const triggerEl = document.querySelector('[data-kuromi-right-anchor="test6"]');
                 if (!triggerEl) return;
                 if (typeof IntersectionObserver !== 'function') return;
 
