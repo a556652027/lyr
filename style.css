@@ -50,7 +50,7 @@ body::before {
     top: 0;
     right: 0;
     height: var(--viewport-block);
-    background-image: url('img/kuromi_background.jpg');
+    background-image: url('img/kuromi_background_hd.jpg');
     background-repeat: no-repeat;
     background-position: center;
     background-size: contain;
