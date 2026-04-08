@@ -153,6 +153,7 @@
             function update() {
                 const cursor = cursorEl.value;
                 if (!cursor) return;
+                const body = document.body;
 
                 const doc = document.documentElement;
                 const scrollTop = doc.scrollTop || document.body.scrollTop || 0;
@@ -164,11 +165,13 @@
 
                 if (isAtBottom) {
                     cursor.classList.add('is-at-bottom');
+                    if (body) body.classList.add('bottom-focus-mode');
                     cursor.style.transform = '';
                     return;
                 }
 
                 cursor.classList.remove('is-at-bottom');
+                if (body) body.classList.remove('bottom-focus-mode');
                 const progress = maxScroll === 0 ? 0 : Math.min(1, Math.max(0, scrollTop / maxScroll));
 
                 const topPadding = Number.parseFloat(getComputedStyle(cursor).top) || 0;
@@ -205,6 +208,7 @@
                 window.removeEventListener('scroll', onScroll);
                 window.removeEventListener('resize', onResize);
                 if (rafId !== null) window.cancelAnimationFrame(rafId);
+                document.body.classList.remove('bottom-focus-mode');
             });
 
             return { cursorEl };
