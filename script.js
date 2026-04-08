@@ -1,5 +1,5 @@
 (() => {
-    const { createApp, onBeforeUnmount, onMounted, ref } = Vue;
+    const { createApp, nextTick, onBeforeUnmount, onMounted, ref } = Vue;
 
     const MUSIC_VIDEO_ID = 'aGlVMnvsSio';
     const MUSIC_START_SECONDS = 64;
@@ -202,6 +202,19 @@
         }
     };
 
+    const KuromiLeftPop = {
+        props: {
+            visible: { type: Boolean, default: false }
+        },
+        template: `
+            <div
+                class="kuromi-left-pop"
+                :class="{ 'is-visible': visible }"
+                aria-hidden="true"
+            ></div>
+        `
+    };
+
     const HeroSection = {
         emits: ['play'],
         template: `
@@ -237,7 +250,12 @@
         },
         template: `
             <section class="test-content" aria-label="測試內容">
-                <div v-for="item in items" :key="item.title" class="message-box">
+                <div
+                    v-for="(item, index) in items"
+                    :key="item.title"
+                    class="message-box"
+                    :data-kuromi-left-trigger="index === 5 ? 'test6' : null"
+                >
                     <p>{{ item.title }}</p>
                     <p v-if="item.subtitle" class="message-sub">{{ item.subtitle }}</p>
                 </div>
@@ -246,25 +264,59 @@
     };
 
     const App = {
-        components: { HeroSection, SideNavCursor, TestContent },
+        components: { HeroSection, KuromiLeftPop, SideNavCursor, TestContent },
         setup() {
             const { play } = useYouTubePlayer();
+            const isKuromiLeftVisible = ref(false);
             let cleanupSmoothScroll = () => {};
+            let kuromiLeftObserver = null;
+
+            function cleanupKuromiLeftObserver() {
+                if (!kuromiLeftObserver) return;
+                kuromiLeftObserver.disconnect();
+                kuromiLeftObserver = null;
+            }
+
+            function setupKuromiLeftObserver() {
+                cleanupKuromiLeftObserver();
+
+                const triggerEl = document.querySelector('[data-kuromi-left-trigger="test6"]');
+                if (!triggerEl) return;
+                if (typeof IntersectionObserver !== 'function') return;
+
+                kuromiLeftObserver = new IntersectionObserver(
+                    (entries) => {
+                        const entry = entries[0];
+                        isKuromiLeftVisible.value = Boolean(entry && entry.isIntersecting);
+                    },
+                    {
+                        root: null,
+                        rootMargin: '-35% 0px -35% 0px',
+                        threshold: 0
+                    }
+                );
+
+                kuromiLeftObserver.observe(triggerEl);
+            }
 
             onMounted(() => {
                 cleanupSmoothScroll = useSmoothWheelScroll();
+                nextTick().then(setupKuromiLeftObserver);
             });
 
             onBeforeUnmount(() => {
                 cleanupSmoothScroll();
+                cleanupKuromiLeftObserver();
             });
 
             return {
+                isKuromiLeftVisible,
                 playBirthdayMusic: play
             };
         },
         template: `
             <SideNavCursor />
+            <KuromiLeftPop :visible="isKuromiLeftVisible" />
             <div class="container">
                 <HeroSection @play="playBirthdayMusic" />
                 <TestContent />
