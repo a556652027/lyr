@@ -144,25 +144,8 @@
         `
     };
 
-    const TestContent = {
-        setup() {
-            const items = [
-                { title: '', subtitle: '' },
-            ];
-            return { items };
-        },
-        template: `
-            <section class="test-content" aria-label="測試內容">
-                <div v-for="item in items" :key="item.title" class="message-box">
-                    <p>{{ item.title }}</p>
-                    <p v-if="item.subtitle" class="message-sub">{{ item.subtitle }}</p>
-                </div>
-            </section>
-        `
-    };
-
     const App = {
-        components: { HeroSection, SideNavCursor, BottomJumpAction, TestContent },
+        components: { HeroSection, SideNavCursor, BottomJumpAction },
         setup() {
             const isBottomFocused = ref(false);
             let cleanupSmoothScroll = () => {};
@@ -180,7 +163,6 @@
             <BottomJumpAction :visible="isBottomFocused" />
             <div class="container">
                 <HeroSection />
-                <TestContent />
             </div>
         `
     };
