@@ -1,98 +1,33 @@
 (() => {
-    const { createApp, nextTick, onBeforeUnmount, onMounted, ref } = Vue;
-
-    const MUSIC_VIDEO_ID = 'aGlVMnvsSio';
-    const MUSIC_START_SECONDS = 64;
-
-    function useYouTubePlayer() {
-        let player = null;
-        let isReady = false;
-        let pendingPlay = false;
-
-        function play() {
-            if (isReady && player && typeof player.loadVideoById === 'function') {
-                pendingPlay = false;
-                player.loadVideoById({
-                    videoId: MUSIC_VIDEO_ID,
-                    startSeconds: MUSIC_START_SECONDS
-                });
-                return;
-            }
-
-            pendingPlay = true;
-        }
-
-        window.onYouTubeIframeAPIReady = () => {
-            player = new YT.Player('youtube-player-container', {
-                height: '0',
-                width: '0',
-                videoId: MUSIC_VIDEO_ID,
-                playerVars: {
-                    autoplay: 0,
-                    controls: 0,
-                    modestbranding: 1,
-                    start: MUSIC_START_SECONDS
-                },
-                events: {
-                    onReady: () => {
-                        isReady = true;
-                        if (pendingPlay) play();
-                    }
-                }
-            });
-        };
-
-        return { play };
-    }
+    const { createApp, onBeforeUnmount, onMounted, ref } = Vue;
 
     function useSmoothWheelScroll() {
         if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
             return () => {};
         }
 
-        const minDeltaForSmoothing = 40;
         const ease = 0.12;
-
+        const minDelta = 40;
         let isAnimating = false;
         let rafId = null;
         let targetY = window.scrollY;
         let currentY = window.scrollY;
 
-        function getMaxScrollY() {
-            const doc = document.documentElement;
-            const scrollHeight = doc.scrollHeight || document.body.scrollHeight || 0;
-            const clientHeight = doc.clientHeight || window.innerHeight || 0;
-            return Math.max(0, scrollHeight - clientHeight);
+        function maxScrollY() {
+            const d = document.documentElement;
+            return Math.max(0, (d.scrollHeight || document.body.scrollHeight) - (d.clientHeight || window.innerHeight));
         }
 
-        function clamp(value, min, max) {
-            return Math.min(max, Math.max(min, value));
-        }
-
-        function stop() {
-            if (rafId === null) return;
-            window.cancelAnimationFrame(rafId);
-            rafId = null;
-            isAnimating = false;
-        }
+        function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
 
         function step() {
-            const maxY = getMaxScrollY();
-            targetY = clamp(targetY, 0, maxY);
-
+            targetY = clamp(targetY, 0, maxScrollY());
             currentY += (targetY - currentY) * ease;
             const done = Math.abs(targetY - currentY) < 0.5;
             if (done) currentY = targetY;
-
             window.scrollTo(0, Math.round(currentY));
-
-            if (!done) {
-                rafId = window.requestAnimationFrame(step);
-                return;
-            }
-
-            rafId = null;
-            isAnimating = false;
+            if (done) { rafId = null; isAnimating = false; return; }
+            rafId = window.requestAnimationFrame(step);
         }
 
         function start() {
@@ -101,43 +36,26 @@
             rafId = window.requestAnimationFrame(step);
         }
 
-        function onWheel(event) {
-            if (!event.cancelable) return;
-            if (event.ctrlKey || event.metaKey) return;
-            if (Math.abs(event.deltaY) < minDeltaForSmoothing) return;
-
-            event.preventDefault();
-
-            let deltaY = event.deltaY;
-            if (event.deltaMode === 1) deltaY *= 16;
-            if (event.deltaMode === 2) deltaY *= window.innerHeight;
-
-            if (!isAnimating) {
-                currentY = window.scrollY;
-                targetY = window.scrollY;
-            }
-
-            targetY += deltaY;
+        function onWheel(e) {
+            if (!e.cancelable || e.ctrlKey || e.metaKey || Math.abs(e.deltaY) < minDelta) return;
+            e.preventDefault();
+            let dy = e.deltaY;
+            if (e.deltaMode === 1) dy *= 16;
+            if (e.deltaMode === 2) dy *= window.innerHeight;
+            if (!isAnimating) { currentY = window.scrollY; targetY = window.scrollY; }
+            targetY += dy;
             start();
         }
 
-        function onScroll() {
-            if (isAnimating) return;
-            targetY = window.scrollY;
-            currentY = window.scrollY;
-        }
-
-        function onResize() {
-            targetY = clamp(targetY, 0, getMaxScrollY());
-            if (isAnimating) start();
-        }
+        function onScroll() { if (!isAnimating) { targetY = window.scrollY; currentY = window.scrollY; } }
+        function onResize() { targetY = clamp(targetY, 0, maxScrollY()); if (isAnimating) start(); }
 
         window.addEventListener('wheel', onWheel, { passive: false });
         window.addEventListener('scroll', onScroll, { passive: true });
         window.addEventListener('resize', onResize);
 
         return () => {
-            stop();
+            if (rafId !== null) { window.cancelAnimationFrame(rafId); rafId = null; }
             window.removeEventListener('wheel', onWheel);
             window.removeEventListener('scroll', onScroll);
             window.removeEventListener('resize', onResize);
@@ -150,75 +68,54 @@
         setup(props, { emit }) {
             const cursorEl = ref(null);
             let rafId = null;
-            let lastIsAtBottom = false;
-
-            function syncBottomState(isAtBottom) {
-                if (lastIsAtBottom === isAtBottom) return;
-                lastIsAtBottom = isAtBottom;
-                emit('bottom-change', isAtBottom);
-            }
+            let lastAtBottom = false;
 
             function update() {
-                const cursor = cursorEl.value;
-                if (!cursor) return;
-                const body = document.body;
-
+                const el = cursorEl.value;
+                if (!el) return;
                 const doc = document.documentElement;
                 const scrollTop = doc.scrollTop || document.body.scrollTop || 0;
-                const scrollHeight = doc.scrollHeight || document.body.scrollHeight || 0;
-                const clientHeight = doc.clientHeight || window.innerHeight || 0;
-
-                const maxScroll = Math.max(0, scrollHeight - clientHeight);
+                const clientHeight = doc.clientHeight || window.innerHeight;
+                const maxScroll = Math.max(0, (doc.scrollHeight || document.body.scrollHeight) - clientHeight);
                 const isAtBottom = maxScroll > 0 && scrollTop >= maxScroll - 2;
-                syncBottomState(isAtBottom);
+
+                if (isAtBottom !== lastAtBottom) {
+                    lastAtBottom = isAtBottom;
+                    emit('bottom-change', isAtBottom);
+                }
 
                 if (isAtBottom) {
-                    cursor.classList.add('is-at-bottom');
-                    if (body) body.classList.add('bottom-focus-mode');
-                    cursor.style.transform = '';
+                    el.classList.add('is-at-bottom');
+                    document.body.classList.add('bottom-focus-mode');
+                    el.style.transform = '';
                     return;
                 }
 
-                cursor.classList.remove('is-at-bottom');
-                if (body) body.classList.remove('bottom-focus-mode');
-                const progress = maxScroll === 0 ? 0 : Math.min(1, Math.max(0, scrollTop / maxScroll));
-
-                const topPadding = Number.parseFloat(getComputedStyle(cursor).top) || 0;
-                const cursorHeight = cursor.offsetHeight;
-                const available = Math.max(0, clientHeight - topPadding * 2 - cursorHeight);
-                const translateY = Math.round(progress * available);
-
-                cursor.style.transform = `translateY(${translateY}px)`;
+                el.classList.remove('is-at-bottom');
+                document.body.classList.remove('bottom-focus-mode');
+                const progress = maxScroll === 0 ? 0 : Math.min(1, scrollTop / maxScroll);
+                const top = Number.parseFloat(getComputedStyle(el).top) || 0;
+                const available = Math.max(0, clientHeight - top * 2 - el.offsetHeight);
+                el.style.transform = `translateY(${Math.round(progress * available)}px)`;
             }
 
             function schedule() {
                 if (rafId !== null) return;
-                rafId = window.requestAnimationFrame(() => {
-                    rafId = null;
-                    update();
-                });
-            }
-
-            function onScroll() {
-                schedule();
-            }
-
-            function onResize() {
-                schedule();
+                rafId = window.requestAnimationFrame(() => { rafId = null; update(); });
             }
 
             onMounted(() => {
-                window.addEventListener('scroll', onScroll, { passive: true });
-                window.addEventListener('resize', onResize);
+                window.addEventListener('scroll', schedule, { passive: true });
+                window.addEventListener('resize', schedule);
                 schedule();
             });
 
             onBeforeUnmount(() => {
-                window.removeEventListener('scroll', onScroll);
-                window.removeEventListener('resize', onResize);
+                window.removeEventListener('scroll', schedule);
+                window.removeEventListener('resize', schedule);
                 if (rafId !== null) window.cancelAnimationFrame(rafId);
                 document.body.classList.remove('bottom-focus-mode');
-                syncBottomState(false);
+                if (lastAtBottom) emit('bottom-change', false);
             });
 
             return { cursorEl };
@@ -231,69 +128,26 @@
             href: { type: String, default: 'second.html' }
         },
         template: `
-            <div
-                class="bottom-action-layer"
-                :class="{ 'is-visible': visible }"
-                :aria-hidden="String(!visible)"
-            >
-                <a
-                    class="bottom-jump-btn"
-                    :href="href"
-                    :tabindex="visible ? 0 : -1"
-                >
-                    Open Page 2
-                </a>
+            <div class="bottom-action-layer" :class="{ 'is-visible': visible }" :aria-hidden="String(!visible)">
+                <a class="bottom-jump-btn" :href="href" :tabindex="visible ? 0 : -1">兌換券</a>
             </div>
         `
     };
 
-    const KuromiLeftPop = {
-        props: {
-            visible: { type: Boolean, default: false }
-        },
-        template: `
-            <div
-                class="kuromi-left-pop"
-                :class="{ 'is-visible': visible }"
-                aria-hidden="true"
-            ></div>
-        `
-    };
-
-    const KuromiRightPop = {
-        props: {
-            visible: { type: Boolean, default: false }
-        },
-        template: `
-            <div
-                class="kuromi-right-pop"
-                :class="{ 'is-visible': visible }"
-                aria-hidden="true"
-            ></div>
-        `
-    };
-
     const HeroSection = {
-        emits: ['play'],
         template: `
             <section class="hero">
                 <header class="header">
                     <h1 class="title">賴彥蓉<br>生日快樂</h1>
                 </header>
-                <main class="content">
-                    <button class="birthday-btn" type="button" @click="$emit('play')">播放音樂</button>
-                </main>
             </section>
         `
-    }
+    };
 
     const TestContent = {
         setup() {
             const items = [
-                {
-                    title: '測試內容 1',
-                    subtitle: '往下捲動，右側 Kuromi 導覽游標會跟著上下移動。'
-                },
+                { title: '測試內容 1', subtitle: '往下捲動，右側 Kuromi 導覽游標會跟著上下移動。' },
                 { title: '測試內容 2' },
                 { title: '測試內容 3' },
                 { title: '測試內容 4' },
@@ -308,23 +162,7 @@
         },
         template: `
             <section class="test-content" aria-label="測試內容">
-                <div
-                    v-for="(item, index) in items"
-                    :key="item.title"
-                    class="message-box"
-                >
-                    <span
-                        v-if="index === 1"
-                        class="popup-trigger-anchor"
-                        data-kuromi-left-anchor="test2"
-                        aria-hidden="true"
-                    ></span>
-                    <span
-                        v-if="index === 5"
-                        class="popup-trigger-anchor"
-                        data-kuromi-right-anchor="test6"
-                        aria-hidden="true"
-                    ></span>
+                <div v-for="item in items" :key="item.title" class="message-box">
                     <p>{{ item.title }}</p>
                     <p v-if="item.subtitle" class="message-sub">{{ item.subtitle }}</p>
                 </div>
@@ -333,106 +171,26 @@
     };
 
     const App = {
-        components: { HeroSection, KuromiLeftPop, KuromiRightPop, SideNavCursor, BottomJumpAction, TestContent },
+        components: { HeroSection, SideNavCursor, BottomJumpAction, TestContent },
         setup() {
-            const { play } = useYouTubePlayer();
-            const isKuromiLeftVisible = ref(false);
-            const isKuromiRightVisible = ref(false);
             const isBottomFocused = ref(false);
             let cleanupSmoothScroll = () => {};
-            let kuromiLeftObserver = null;
-            let kuromiRightObserver = null;
 
-            function cleanupKuromiLeftObserver() {
-                if (!kuromiLeftObserver) return;
-                kuromiLeftObserver.disconnect();
-                kuromiLeftObserver = null;
-            }
-
-            function setupKuromiLeftObserver() {
-                cleanupKuromiLeftObserver();
-
-                const triggerEl = document.querySelector('[data-kuromi-left-anchor="test2"]');
-                if (!triggerEl) return;
-                if (typeof IntersectionObserver !== 'function') return;
-
-                kuromiLeftObserver = new IntersectionObserver(
-                    (entries) => {
-                        const entry = entries[0];
-                        isKuromiLeftVisible.value = Boolean(entry && entry.isIntersecting);
-                    },
-                    {
-                        root: null,
-                        rootMargin: '-35% 0px -35% 0px',
-                        threshold: 0
-                    }
-                );
-
-                kuromiLeftObserver.observe(triggerEl);
-            }
-
-            function cleanupKuromiRightObserver() {
-                if (!kuromiRightObserver) return;
-                kuromiRightObserver.disconnect();
-                kuromiRightObserver = null;
-            }
-
-            function setupKuromiRightObserver() {
-                cleanupKuromiRightObserver();
-
-                const triggerEl = document.querySelector('[data-kuromi-right-anchor="test6"]');
-                if (!triggerEl) return;
-                if (typeof IntersectionObserver !== 'function') return;
-
-                kuromiRightObserver = new IntersectionObserver(
-                    (entries) => {
-                        const entry = entries[0];
-                        isKuromiRightVisible.value = Boolean(entry && entry.isIntersecting);
-                    },
-                    {
-                        root: null,
-                        rootMargin: '-35% 0px -35% 0px',
-                        threshold: 0
-                    }
-                );
-
-                kuromiRightObserver.observe(triggerEl);
-            }
-
-            onMounted(() => {
-                cleanupSmoothScroll = useSmoothWheelScroll();
-                nextTick().then(() => {
-                    setupKuromiLeftObserver();
-                    setupKuromiRightObserver();
-                });
-            });
-
-            onBeforeUnmount(() => {
-                cleanupSmoothScroll();
-                cleanupKuromiLeftObserver();
-                cleanupKuromiRightObserver();
-            });
+            onMounted(() => { cleanupSmoothScroll = useSmoothWheelScroll(); });
+            onBeforeUnmount(() => { cleanupSmoothScroll(); });
 
             return {
                 isBottomFocused,
-                isKuromiLeftVisible,
-                isKuromiRightVisible,
-                handleBottomChange: (value) => {
-                    isBottomFocused.value = value;
-                },
-                playBirthdayMusic: play
+                handleBottomChange: v => { isBottomFocused.value = v; }
             };
         },
         template: `
             <SideNavCursor @bottom-change="handleBottomChange" />
             <BottomJumpAction :visible="isBottomFocused" />
-            <KuromiLeftPop :visible="isKuromiLeftVisible" />
-            <KuromiRightPop :visible="isKuromiRightVisible" />
             <div class="container">
-                <HeroSection @play="playBirthdayMusic" />
+                <HeroSection />
                 <TestContent />
             </div>
-            <div id="youtube-player-container" style="display: none;"></div>
         `
     };
 

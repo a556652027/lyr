@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Page 2</title>
+    <title>兌換券</title>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -13,10 +14,7 @@
 
         body {
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
+            padding: 40px 20px 60px;
             font-family: Arial, sans-serif;
             color: #fff;
             background:
@@ -24,100 +22,913 @@
                 linear-gradient(135deg, #32193d 0%, #7b3f78 42%, #f06795 100%);
         }
 
-        .card {
-            width: min(760px, 100%);
-            padding: 40px 28px;
-            border-radius: 28px;
+        .page-header {
             text-align: center;
-            background: rgba(24, 9, 30, 0.62);
-            border: 1px solid rgba(255, 255, 255, 0.24);
-            box-shadow: 0 26px 70px rgba(0, 0, 0, 0.35);
-            backdrop-filter: blur(18px);
+            margin-bottom: 48px;
         }
 
-        .figure {
-            width: min(280px, 70vw);
-            aspect-ratio: 1;
-            margin: 0 auto 24px;
-            background: url('img/kuromi.png') center / contain no-repeat;
-            filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.28));
-        }
-
-        .eyebrow {
-            margin-bottom: 10px;
-            font-size: 0.85rem;
+        .page-eyebrow {
+            font-size: 0.8rem;
             font-weight: 700;
-            letter-spacing: 0.28em;
+            letter-spacing: 0.3em;
             text-transform: uppercase;
+            color: #ffd7ea;
+            margin-bottom: 10px;
+        }
+
+        .page-title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 700;
+            text-shadow: 0 4px 24px rgba(0,0,0,0.3);
+        }
+
+        .page-subtitle {
+            margin-top: 12px;
+            font-size: 1rem;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .coupons-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+            max-width: 680px;
+            margin: 0 auto;
+        }
+
+        /* ── Coupon card ── */
+        .coupon {
+            position: relative;
+            border-radius: 32px;
+            background: rgba(24, 9, 30, 0.62);
+            border: 2px solid rgba(255, 255, 255, 0.28);
+            box-shadow: 0 26px 60px rgba(0,0,0,0.35);
+            backdrop-filter: blur(18px);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 220ms ease, box-shadow 220ms ease;
+        }
+
+        .coupon:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 36px 72px rgba(0,0,0,0.42);
+        }
+
+        .coupon.depleted {
+            opacity: 0.55;
+            filter: grayscale(0.4);
+        }
+
+        /* Image */
+        .coupon-img {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            object-fit: cover;
+            display: block;
+            background: rgba(255,255,255,0.06);
+        }
+
+        /* Dashed divider (coupon tear line) */
+        .coupon-divider {
+            position: relative;
+            height: 1px;
+            margin: 0 -1px;
+            border: none;
+            background: repeating-linear-gradient(
+                90deg,
+                rgba(255,255,255,0.35) 0px,
+                rgba(255,255,255,0.35) 8px,
+                transparent 8px,
+                transparent 16px
+            );
+        }
+
+        .coupon-divider::before,
+        .coupon-divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #32193d 0%, #7b3f78 100%);
+        }
+
+        .coupon-divider::before { left: -12px; }
+        .coupon-divider::after  { right: -12px; }
+
+        /* Body */
+        .coupon-body {
+            padding: 22px 24px 28px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .coupon-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            line-height: 1.3;
+        }
+
+        .coupon-desc {
+            font-size: 0.92rem;
+            color: rgba(255,255,255,0.75);
+            line-height: 1.65;
+            flex: 1;
+        }
+
+        /* Footer: quantity + button */
+        .coupon-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 6px;
+            gap: 12px;
+        }
+
+        .coupon-qty {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .qty-label {
+            font-size: 0.72rem;
+            letter-spacing: 0.1em;
+            color: rgba(255,255,255,0.55);
+            text-transform: uppercase;
+        }
+
+        .qty-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            line-height: 1;
             color: #ffd7ea;
         }
 
-        h1 {
-            font-size: clamp(2rem, 5vw, 3.6rem);
-            margin-bottom: 14px;
+        .qty-value.zero {
+            color: rgba(255,255,255,0.35);
         }
 
-        p {
-            max-width: 560px;
-            margin: 0 auto;
-            font-size: 1.05rem;
-            line-height: 1.7;
-            color: rgba(255, 255, 255, 0.88);
-        }
-
-        .actions {
-            margin-top: 28px;
-            display: flex;
-            justify-content: center;
-        }
-
-        .primary-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 14px 30px;
+        .redeem-btn {
+            flex-shrink: 0;
+            padding: 11px 24px;
             border-radius: 999px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 700;
             background: linear-gradient(135deg, #fff3f8 0%, #ffd7ea 100%);
             color: #53233d;
-            text-decoration: none;
-            font-weight: 700;
-            box-shadow: 0 18px 36px rgba(0, 0, 0, 0.24);
-            transition: transform 180ms ease, box-shadow 180ms ease;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.22);
+            transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
         }
 
-        .primary-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 22px 40px rgba(0, 0, 0, 0.28);
+        .redeem-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 30px rgba(0,0,0,0.28);
+        }
+
+        .redeem-btn:active:not(:disabled) {
+            transform: scale(0.96);
+        }
+
+        .redeem-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            background: rgba(255,255,255,0.18);
+            color: rgba(255,255,255,0.55);
+            box-shadow: none;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            padding: 13px 26px;
+            border-radius: 999px;
+            background: rgba(24, 9, 30, 0.92);
+            border: 1px solid rgba(255,255,255,0.22);
+            color: #ffd7ea;
+            font-size: 0.95rem;
+            font-weight: 600;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 12px 36px rgba(0,0,0,0.4);
+            transition: transform 280ms cubic-bezier(.34,1.56,.64,1), opacity 280ms ease;
+            opacity: 0;
+            pointer-events: none;
+            white-space: nowrap;
+            z-index: 999;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* Back link */
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 48px;
+            color: rgba(255,255,255,0.55);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 180ms ease;
+        }
+
+        .back-link:hover {
+            color: #ffd7ea;
+        }
+
+        /* Confirm dialog */
+        .dialog-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 200ms ease;
+        }
+
+        .dialog-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .dialog {
+            background: rgba(30, 10, 40, 0.95);
+            border: 1px solid rgba(255,255,255,0.22);
+            border-radius: 22px;
+            padding: 32px 28px;
+            max-width: 340px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+            transform: scale(0.9);
+            transition: transform 220ms cubic-bezier(.34,1.56,.64,1);
+        }
+
+        .dialog-overlay.open .dialog {
+            transform: scale(1);
+        }
+
+        .dialog-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .dialog-body {
+            font-size: 0.95rem;
+            color: rgba(255,255,255,0.75);
+            line-height: 1.6;
+            margin-bottom: 26px;
+        }
+
+        .dialog-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .dialog-cancel {
+            flex: 1;
+            padding: 12px 0;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.28);
+            background: transparent;
+            color: rgba(255,255,255,0.75);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 160ms ease;
+        }
+
+        .dialog-cancel:hover {
+            background: rgba(255,255,255,0.08);
+        }
+
+        .dialog-confirm {
+            flex: 1;
+            padding: 12px 0;
+            border-radius: 999px;
+            border: none;
+            background: linear-gradient(135deg, #fff3f8 0%, #ffd7ea 100%);
+            color: #53233d;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 160ms ease;
+        }
+
+        .dialog-confirm:hover {
+            transform: scale(1.04);
+        }
+
+        /* Quantity stepper */
+        .qty-stepper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .stepper-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.28);
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+            font-size: 1.3rem;
+            line-height: 1;
+            cursor: pointer;
+            transition: background 160ms ease, transform 120ms ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stepper-btn:hover:not(:disabled) {
+            background: rgba(255,255,255,0.16);
+        }
+
+        .stepper-btn:active:not(:disabled) {
+            transform: scale(0.9);
+        }
+
+        .stepper-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .stepper-value {
+            font-size: 2rem;
+            font-weight: 700;
+            min-width: 48px;
+            text-align: center;
+            color: #ffd7ea;
+        }
+
+        @media (max-width: 600px) {
+            .coupons-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ── Scroll effects ── */
+        html, body { scrollbar-width: none; -ms-overflow-style: none; }
+        html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; }
+
+        .popup-trigger-anchor {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .kuromi-left-pop {
+            --kuromi-left-size: 220px;
+            --kuromi-left-offset: 12px;
+            --kuromi-left-x: calc(-110% - var(--kuromi-left-offset));
+            position: fixed;
+            left: 0;
+            top: 50%;
+            width: var(--kuromi-left-size);
+            height: var(--kuromi-left-size);
+            background-image: url('img/kuromi_left.png');
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+            pointer-events: none;
+            z-index: 2;
+            transform: translate3d(var(--kuromi-left-x), -50%, 0);
+            transition: transform 360ms cubic-bezier(0.2, 0.75, 0.2, 1);
+            will-change: transform;
+            filter: drop-shadow(0 12px 26px rgba(0, 0, 0, 0.35));
+        }
+
+        .kuromi-left-pop.is-visible {
+            --kuromi-left-x: var(--kuromi-left-offset);
+        }
+
+        .kuromi-right-pop {
+            --kuromi-right-size: 220px;
+            --kuromi-right-offset: 12px;
+            --kuromi-right-x: calc(110% + var(--kuromi-right-offset));
+            position: fixed;
+            right: 0;
+            top: 50%;
+            width: var(--kuromi-right-size);
+            height: var(--kuromi-right-size);
+            background-image: url('img/kuromi_right.png');
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+            pointer-events: none;
+            z-index: 2;
+            transform: translate3d(var(--kuromi-right-x), -50%, 0);
+            transition: transform 360ms cubic-bezier(0.2, 0.75, 0.2, 1);
+            will-change: transform;
+            filter: drop-shadow(0 12px 26px rgba(0, 0, 0, 0.35));
+        }
+
+        .kuromi-right-pop.is-visible {
+            --kuromi-right-x: calc(var(--kuromi-right-offset) * -1);
+        }
+
+        .sidenav-cursor {
+            --sidenav-size: 64px;
+            position: fixed;
+            right: calc(var(--sidenav-size) * -0.5);
+            top: 12px;
+            width: var(--sidenav-size);
+            height: var(--sidenav-size);
+            background-image: url('img/kuromi_sidenav.png');
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+            pointer-events: none;
+            z-index: 2;
+            transform: translateY(0);
+            transform-origin: center center;
+            transition: transform 360ms cubic-bezier(0.2, 0.75, 0.2, 1),
+                        right 360ms cubic-bezier(0.2, 0.75, 0.2, 1),
+                        top 360ms cubic-bezier(0.2, 0.75, 0.2, 1),
+                        width 360ms cubic-bezier(0.2, 0.75, 0.2, 1),
+                        height 360ms cubic-bezier(0.2, 0.75, 0.2, 1);
+            will-change: transform, right, top, width, height;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .kuromi-left-pop, .kuromi-right-pop, .sidenav-cursor { transition: none; }
         }
 
         @media (max-width: 768px) {
-            .card {
-                padding: 32px 22px;
-            }
+            .kuromi-left-pop { --kuromi-left-size: 180px; }
+            .kuromi-right-pop { --kuromi-right-size: 180px; }
+        }
 
-            p {
-                font-size: 1rem;
-            }
+        /* ── Speech bubbles ── */
+        .speech-bubble {
+            position: fixed;
+            top: 50%;
+            max-width: 200px;
+            padding: 14px 18px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.96);
+            color: #53233d;
+            font-size: 0.92rem;
+            font-weight: 600;
+            line-height: 1.6;
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+            pointer-events: none;
+            z-index: 3;
+            white-space: pre-wrap;
+            word-break: break-word;
+            opacity: 0;
+            transform: translateY(-50%) scale(0.82);
+            transition: opacity 300ms ease, transform 320ms cubic-bezier(.34, 1.56, .64, 1);
+        }
 
-            .primary-btn {
-                width: 100%;
-                max-width: 280px;
-            }
+        .speech-bubble.is-visible {
+            opacity: 1;
+            transform: translateY(-50%) scale(1);
+        }
+
+        .speech-bubble-left {
+            left: 248px;
+        }
+
+        .speech-bubble-left::before {
+            content: '';
+            position: absolute;
+            left: -9px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 9px solid transparent;
+            border-right: 9px solid rgba(255, 255, 255, 0.96);
+            border-left: 0;
+        }
+
+        .speech-bubble-right {
+            right: 248px;
+        }
+
+        .speech-bubble-right::before {
+            content: '';
+            position: absolute;
+            right: -9px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 9px solid transparent;
+            border-left: 9px solid rgba(255, 255, 255, 0.96);
+            border-right: 0;
+        }
+
+        @media (max-width: 768px) {
+            .speech-bubble-left  { left: 204px; }
+            .speech-bubble-right { right: 204px; }
+            .speech-bubble { max-width: 140px; font-size: 0.82rem; padding: 10px 14px; }
         }
     </style>
 </head>
 <body>
-    <main class="card">
-        <div class="figure" aria-hidden="true"></div>
-        <p class="eyebrow">Page 2</p>
-        <h1>You made it.</h1>
-        <p>
-            This is the second page opened from the bottom interaction.
-            You can replace this section with any content you want next.
-        </p>
-        <div class="actions">
-            <a class="primary-btn" href="index.html">Back Home</a>
+
+    <header class="page-header">
+        <p class="page-eyebrow">生日禮物</p>
+        <h1 class="page-title">兌換券</h1>
+        <p class="page-subtitle">選擇你想兌換的項目，剩餘次數會自動儲存</p>
+    </header>
+
+    <div class="coupons-grid" id="coupons-grid"></div>
+
+    <a class="back-link" href="index.html">← 返回</a>
+
+    <!-- Confirm dialog -->
+    <div class="dialog-overlay" id="dialog-overlay">
+        <div class="dialog">
+            <p class="dialog-title" id="dialog-title"></p>
+            <p class="dialog-body" id="dialog-body"></p>
+            <div class="qty-stepper">
+                <button class="stepper-btn" id="stepper-minus">−</button>
+                <span class="stepper-value" id="stepper-value">1</span>
+                <button class="stepper-btn" id="stepper-plus">＋</button>
+            </div>
+            <div class="dialog-actions">
+                <button class="dialog-cancel" id="dialog-cancel">取消</button>
+                <button class="dialog-confirm" id="dialog-confirm">確認兌換</button>
+            </div>
         </div>
-    </main>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ── Smooth scroll（頁面一載入即啟動，不依賴 Vue CDN）──
+        (function () {
+            if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+            const ease = 0.12, minDelta = 40;
+            let isAnimating = false, rafId = null;
+            let targetY = window.scrollY, currentY = window.scrollY;
+            function maxScrollY() {
+                const d = document.documentElement;
+                return Math.max(0, (d.scrollHeight || document.body.scrollHeight) - (d.clientHeight || window.innerHeight));
+            }
+            function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
+            function step() {
+                targetY = clamp(targetY, 0, maxScrollY());
+                currentY += (targetY - currentY) * ease;
+                const done = Math.abs(targetY - currentY) < 0.5;
+                if (done) currentY = targetY;
+                window.scrollTo(0, Math.round(currentY));
+                if (done) { rafId = null; isAnimating = false; return; }
+                rafId = requestAnimationFrame(step);
+            }
+            function start() { if (rafId !== null) return; isAnimating = true; rafId = requestAnimationFrame(step); }
+            window.addEventListener('wheel', function (e) {
+                if (!e.cancelable || e.ctrlKey || e.metaKey || Math.abs(e.deltaY) < minDelta) return;
+                e.preventDefault();
+                let dy = e.deltaY;
+                if (e.deltaMode === 1) dy *= 16;
+                if (e.deltaMode === 2) dy *= window.innerHeight;
+                if (!isAnimating) { currentY = window.scrollY; targetY = window.scrollY; }
+                targetY += dy;
+                start();
+            }, { passive: false });
+            window.addEventListener('scroll', function () { if (!isAnimating) { targetY = window.scrollY; currentY = window.scrollY; } }, { passive: true });
+            window.addEventListener('resize', function () { targetY = clamp(targetY, 0, maxScrollY()); if (isAnimating) start(); });
+        })();
+
+        // ┌─────────────────────────────────────────────────────────┐
+        // │  EmailJS 設定（填入後即可啟用寄信通知）                    │
+        // │  申請網址：https://www.emailjs.com/                      │
+        // │                                                          │
+        // │  Template 可用的變數：                                    │
+        // │    {{coupon_name}}   兌換券名稱                           │
+        // │    {{amount}}       本次兌換數量                          │
+        // │    {{remaining}}    兌換後剩餘次數                        │
+        // │    {{time}}         兌換時間                              │
+        // └─────────────────────────────────────────────────────────┘
+        const EMAILJS_PUBLIC_KEY  = '2pU5-srdpbSa8y6VA';   // Account → API Keys → Public Key
+        const EMAILJS_SERVICE_ID  = 'service_qz3f198';   // Email Services → Service ID
+        const EMAILJS_TEMPLATE_ID = 'template_oizkrnb';   // Email Templates → Template ID
+
+        if (EMAILJS_PUBLIC_KEY) emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+
+        function sendRedeemEmail(couponTitle, amount, remaining) {
+            if (!EMAILJS_PUBLIC_KEY || !EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID) return;
+            emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+                coupon_name: couponTitle,
+                amount:      amount,
+                remaining:   remaining,
+                time:        new Date().toLocaleString('zh-TW', { hour12: false })
+            }).catch(() => {}); // 寄信失敗不影響兌換流程
+        }
+
+        const COUPONS = [
+            {
+                id: 'coupon_a',
+                title: '麥香綠茶兌換券',
+                desc: '不甜不膩的麥香綠茶，心情好的時候來個幾瓶。',
+                img: 'img/coupon-gt .png',
+                total: 10
+            },
+            {
+                id: 'coupon_b',
+                title: '天香五號兌換券',
+                desc: '這裡放兌換券 B 的說明文字，可以描述內容、使用條件或期限。',
+                img: 'img/coupon-five.png',
+                total: 5
+            },
+            {
+                id: 'coupon_c',
+                title: '神秘禮物兌換券',
+                desc: '這裡放兌換券 C 的說明文字，可以描述內容、使用條件或期限。',
+                img: 'img/coupon-surprise.png',
+                total: 1
+            }
+        ];
+
+        // ── State ──
+        function loadQty(id, fallback) {
+            const v = localStorage.getItem(id);
+            return v !== null ? parseInt(v, 10) : fallback;
+        }
+
+        function saveQty(id, qty) {
+            localStorage.setItem(id, qty);
+        }
+
+        const state = {};
+        COUPONS.forEach(c => {
+            state[c.id] = loadQty(c.id, c.total);
+        });
+
+        // ── Render ──
+        function render() {
+            const grid = document.getElementById('coupons-grid');
+            grid.innerHTML = '';
+
+            COUPONS.forEach((c, index) => {
+                const qty = state[c.id];
+                const depleted = qty <= 0;
+
+                const card = document.createElement('article');
+                card.className = 'coupon' + (depleted ? ' depleted' : '');
+
+                const leftAnchor = index === 1
+                    ? '<span class="popup-trigger-anchor" data-kuromi-left-anchor="coupon2" aria-hidden="true"></span>'
+                    : '';
+                const rightAnchor = index === 2
+                    ? '<span class="popup-trigger-anchor" data-kuromi-right-anchor="coupon3" aria-hidden="true"></span>'
+                    : '';
+
+                card.innerHTML = `
+                    ${leftAnchor}${rightAnchor}
+                    <img class="coupon-img" src="${c.img}" alt="${c.title}">
+                    <div class="coupon-divider"></div>
+                    <div class="coupon-body">
+                        <h2 class="coupon-title">${c.title}</h2>
+                        <p class="coupon-desc">${c.desc}</p>
+                        <div class="coupon-footer">
+                            <div class="coupon-qty">
+                                <span class="qty-label">剩餘次數</span>
+                                <span class="qty-value${depleted ? ' zero' : ''}">${qty}</span>
+                            </div>
+                            <button class="redeem-btn" data-id="${c.id}" ${depleted ? 'disabled' : ''}>
+                                ${depleted ? '已用完' : '兌換'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+
+            grid.querySelectorAll('.redeem-btn:not(:disabled)').forEach(btn => {
+                btn.addEventListener('click', () => openDialog(btn.dataset.id));
+            });
+
+            document.dispatchEvent(new CustomEvent('coupons-rendered'));
+        }
+
+        // ── Dialog ──
+        let pendingId = null;
+        let stepperQty = 1;
+        let stepperMax = 1;
+
+        const elStepperValue = document.getElementById('stepper-value');
+        const elStepperMinus = document.getElementById('stepper-minus');
+        const elStepperPlus  = document.getElementById('stepper-plus');
+
+        function updateStepper() {
+            elStepperValue.textContent = stepperQty;
+            elStepperMinus.disabled = stepperQty <= 1;
+            elStepperPlus.disabled  = stepperQty >= stepperMax;
+        }
+
+        elStepperMinus.addEventListener('click', () => {
+            if (stepperQty > 1) { stepperQty--; updateStepper(); }
+        });
+
+        elStepperPlus.addEventListener('click', () => {
+            if (stepperQty < stepperMax) { stepperQty++; updateStepper(); }
+        });
+
+        function openDialog(id) {
+            const coupon = COUPONS.find(c => c.id === id);
+            pendingId = id;
+            stepperQty = 1;
+            stepperMax = state[id];
+            updateStepper();
+            document.getElementById('dialog-title').textContent = `兌換「${coupon.title}」？`;
+            document.getElementById('dialog-body').textContent =
+                `剩餘 ${state[id]} 次，請選擇兌換數量。`;
+            document.getElementById('dialog-overlay').classList.add('open');
+        }
+
+        function closeDialog() {
+            pendingId = null;
+            document.getElementById('dialog-overlay').classList.remove('open');
+        }
+
+        document.getElementById('dialog-cancel').addEventListener('click', closeDialog);
+        document.getElementById('dialog-overlay').addEventListener('click', e => {
+            if (e.target === e.currentTarget) closeDialog();
+        });
+
+        document.getElementById('dialog-confirm').addEventListener('click', () => {
+            if (!pendingId) return;
+            const id = pendingId;
+            const amount = stepperQty;
+            closeDialog();
+            const coupon = COUPONS.find(c => c.id === id);
+            state[id] = Math.max(0, state[id] - amount);
+            saveQty(id, state[id]);
+            sendRedeemEmail(coupon.title, amount, state[id]);
+            render();
+            showToast(state[id] > 0
+                ? `已兌換 ${amount} 次！剩餘 ${state[id]} 次`
+                : `已兌換 ${amount} 次，全數用完！`);
+        });
+
+        // ── Toast ──
+        let toastTimer = null;
+
+        function showToast(msg) {
+            const el = document.getElementById('toast');
+            el.textContent = msg;
+            el.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
+        }
+
+        render();
+    </script>
+
+    <div id="overlay-app"></div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script>
+    (() => {
+        const { createApp, ref, watch, onMounted, onBeforeUnmount } = Vue;
+
+        // ── 氣泡對話框文字（可自由編輯）──
+        const BUBBLE_LEFT  = '本大王來了！\n這樣的驚喜喜歡嗎？';
+        const BUBBLE_RIGHT = '神秘的禮物是什麼?\n才不跟你說！';
+        const BUBBLE_DURATION = 4000; // 顯示毫秒數
+
+const SideNavCursor = {
+            template: '<div ref="cursorEl" class="sidenav-cursor" aria-hidden="true"></div>',
+            setup() {
+                const cursorEl = ref(null);
+                let rafId = null;
+                function update() {
+                    const el = cursorEl.value;
+                    if (!el) return;
+                    const doc = document.documentElement;
+                    const scrollTop = doc.scrollTop || document.body.scrollTop || 0;
+                    const clientHeight = doc.clientHeight || window.innerHeight;
+                    const maxScroll = Math.max(0, (doc.scrollHeight || document.body.scrollHeight) - clientHeight);
+                    const progress = maxScroll === 0 ? 0 : Math.min(1, scrollTop / maxScroll);
+                    const top = Number.parseFloat(getComputedStyle(el).top) || 0;
+                    const available = Math.max(0, clientHeight - top * 2 - el.offsetHeight);
+                    el.style.transform = `translateY(${Math.round(progress * available)}px)`;
+                }
+                function schedule() {
+                    if (rafId !== null) return;
+                    rafId = window.requestAnimationFrame(() => { rafId = null; update(); });
+                }
+                onMounted(() => {
+                    window.addEventListener('scroll', schedule, { passive: true });
+                    window.addEventListener('resize', schedule);
+                    schedule();
+                });
+                onBeforeUnmount(() => {
+                    window.removeEventListener('scroll', schedule);
+                    window.removeEventListener('resize', schedule);
+                    if (rafId !== null) window.cancelAnimationFrame(rafId);
+                });
+                return { cursorEl };
+            }
+        };
+
+        const KuromiLeftPop = {
+            props: { visible: { type: Boolean, default: false } },
+            template: '<div class="kuromi-left-pop" :class="{ \'is-visible\': visible }" aria-hidden="true"></div>'
+        };
+
+        const KuromiRightPop = {
+            props: { visible: { type: Boolean, default: false } },
+            template: '<div class="kuromi-right-pop" :class="{ \'is-visible\': visible }" aria-hidden="true"></div>'
+        };
+
+        const OverlayApp = {
+            components: { SideNavCursor, KuromiLeftPop, KuromiRightPop },
+            setup() {
+                const isKuromiLeftVisible = ref(false);
+                const isKuromiRightVisible = ref(false);
+                let leftObserver = null;
+                let rightObserver = null;
+
+                function makeObserver(selector, stateRef) {
+                    const el = document.querySelector(selector);
+                    if (!el || typeof IntersectionObserver !== 'function') return null;
+                    const obs = new IntersectionObserver(
+                        ([entry]) => { stateRef.value = Boolean(entry && entry.isIntersecting); },
+                        { root: null, rootMargin: '-20% 0px -20% 0px', threshold: 0 }
+                    );
+                    obs.observe(el);
+                    return obs;
+                }
+
+                function setupObservers() {
+                    if (leftObserver)  { leftObserver.disconnect();  leftObserver = null; }
+                    if (rightObserver) { rightObserver.disconnect(); rightObserver = null; }
+                    leftObserver  = makeObserver('[data-kuromi-left-anchor]',  isKuromiLeftVisible);
+                    rightObserver = makeObserver('[data-kuromi-right-anchor]', isKuromiRightVisible);
+                }
+
+                const isLeftBubbleVisible  = ref(false);
+                const isRightBubbleVisible = ref(false);
+                const leftTimerRef  = { value: null };
+                const rightTimerRef = { value: null };
+
+                function showBubble(visibleRef, timerRef) {
+                    visibleRef.value = true;
+                    clearTimeout(timerRef.value);
+                    timerRef.value = setTimeout(() => { visibleRef.value = false; }, BUBBLE_DURATION);
+                }
+
+                onMounted(() => {
+                    setupObservers();
+                    document.addEventListener('coupons-rendered', setupObservers);
+
+                    watch(isKuromiLeftVisible,  v => { if (v) showBubble(isLeftBubbleVisible,  leftTimerRef); });
+                    watch(isKuromiRightVisible, v => { if (v) showBubble(isRightBubbleVisible, rightTimerRef); });
+                });
+
+                onBeforeUnmount(() => {
+                    document.removeEventListener('coupons-rendered', setupObservers);
+                    if (leftObserver)  { leftObserver.disconnect();  leftObserver = null; }
+                    if (rightObserver) { rightObserver.disconnect(); rightObserver = null; }
+                    clearTimeout(leftTimerRef.value);
+                    clearTimeout(rightTimerRef.value);
+                });
+
+                return {
+                    isKuromiLeftVisible, isKuromiRightVisible,
+                    isLeftBubbleVisible, isRightBubbleVisible,
+                    bubbleLeft: BUBBLE_LEFT, bubbleRight: BUBBLE_RIGHT
+                };
+            },
+            template: `
+                <SideNavCursor />
+                <KuromiLeftPop  :visible="isKuromiLeftVisible" />
+                <KuromiRightPop :visible="isKuromiRightVisible" />
+                <div class="speech-bubble speech-bubble-left"  :class="{ 'is-visible': isLeftBubbleVisible }">{{ bubbleLeft }}</div>
+                <div class="speech-bubble speech-bubble-right" :class="{ 'is-visible': isRightBubbleVisible }">{{ bubbleRight }}</div>
+            `
+        };
+
+        createApp(OverlayApp).mount('#overlay-app');
+    })();
+    </script>
 </body>
 </html>
