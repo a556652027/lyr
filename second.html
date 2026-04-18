@@ -545,6 +545,70 @@
             .speech-bubble-right { right: 204px; }
             .speech-bubble { max-width: 140px; font-size: 0.82rem; padding: 10px 14px; }
         }
+
+        /* ── Envelope card ── */
+        .envelope-visual {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(200,80,160,0.22) 0%, rgba(120,80,200,0.22) 100%);
+        }
+        .envelope-icon-large {
+            font-size: 5rem;
+            display: block;
+            animation: envelopeFloat 3s ease-in-out infinite;
+            filter: drop-shadow(0 8px 20px rgba(0,0,0,0.35));
+        }
+        @keyframes envelopeFloat {
+            0%, 100% { transform: translateY(0) rotate(-4deg); }
+            50%       { transform: translateY(-14px) rotate(4deg); }
+        }
+        .coupon-footer-center {
+            justify-content: center;
+        }
+
+        /* ── Code input ── */
+        .code-input {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1.5px solid rgba(255,255,255,0.28);
+            background: rgba(255,255,255,0.09);
+            color: #fff;
+            font-size: 1.6rem;
+            font-weight: 700;
+            text-align: center;
+            letter-spacing: 0.35em;
+            outline: none;
+            margin-bottom: 10px;
+            transition: border-color 200ms ease, background 200ms ease;
+            caret-color: #ffd7ea;
+        }
+        .code-input:focus {
+            border-color: rgba(255,215,234,0.7);
+            background: rgba(255,255,255,0.13);
+        }
+        .code-input::placeholder {
+            color: rgba(255,255,255,0.28);
+            letter-spacing: 0.1em;
+            font-weight: 400;
+            font-size: 1rem;
+        }
+        .envelope-error {
+            color: #ff8fab;
+            font-size: 0.9rem;
+            text-align: center;
+            min-height: 1.4em;
+            margin-bottom: 18px;
+        }
+        .envelope-hint {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.45);
+            text-align: center;
+            margin-bottom: 22px;
+        }
     </style>
 </head>
 <body>
@@ -572,6 +636,20 @@
             <div class="dialog-actions">
                 <button class="dialog-cancel" id="dialog-cancel">取消</button>
                 <button class="dialog-confirm" id="dialog-confirm">確認兌換</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Envelope unlock dialog -->
+    <div class="dialog-overlay" id="envelope-overlay">
+        <div class="dialog">
+            <p class="dialog-title">✉️ 神秘信封</p>
+            <p class="dialog-body">Kuromi 說這封信藏著一個密碼，猜猜看是什麼？</p>
+            <input class="code-input" type="text" id="envelope-code" inputmode="numeric" maxlength="8" placeholder="輸入數字...">
+            <p class="envelope-error" id="envelope-error"></p>
+            <div class="dialog-actions">
+                <button class="dialog-cancel" id="envelope-cancel">取消</button>
+                <button class="dialog-confirm" id="envelope-open">打開信封</button>
             </div>
         </div>
     </div>
@@ -662,6 +740,13 @@
                 desc: '？？？？？？？？',
                 img: 'img/coupon-surprise.png',
                 total: 1
+            },
+            {
+                id: 'coupon_d',
+                title: '小小信封',
+                desc: '一封來自酷洛米的手寫信',
+                img: 'img/kuromi_envelope.png',
+                total: 1
             }
         ];
 
@@ -689,8 +774,9 @@
                 const qty = state[c.id];
                 const depleted = qty <= 0;
 
+                const isEnvelope = c.id === 'coupon_d';
                 const card = document.createElement('article');
-                card.className = 'coupon' + (depleted ? ' depleted' : '');
+                card.className = 'coupon' + (!isEnvelope && depleted ? ' depleted' : '');
 
                 const leftAnchor = index === 0
                     ? '<span class="popup-trigger-anchor" data-kuromi-left-anchor="coupon1" aria-hidden="true"></span>'
@@ -699,22 +785,22 @@
                     ? '<span class="popup-trigger-anchor" data-kuromi-right-anchor="coupon2" aria-hidden="true"></span>'
                     : '';
 
+                const cardMedia = isEnvelope
+                    ? `<img class="coupon-img" src="img/kuromi-env.png" alt="${c.title}">`
+                    : `<img class="coupon-img" src="${c.img}" alt="${c.title}">`;
+
+                const cardFooter = isEnvelope
+                    ? `<div class="coupon-footer coupon-footer-center"><button class="redeem-btn" data-id="${c.id}" data-envelope="true">✉️ 打開信封</button></div>`
+                    : `<div class="coupon-footer"><div class="coupon-qty"><span class="qty-label">剩餘次數</span><span class="qty-value${depleted ? ' zero' : ''}">${qty}</span></div><button class="redeem-btn" data-id="${c.id}" ${depleted ? 'disabled' : ''}>${depleted ? '已用完' : '兌換'}</button></div>`;
+
                 card.innerHTML = `
                     ${leftAnchor}${rightAnchor}
-                    <img class="coupon-img" src="${c.img}" alt="${c.title}">
+                    ${cardMedia}
                     <div class="coupon-divider"></div>
                     <div class="coupon-body">
                         <h2 class="coupon-title">${c.title}</h2>
                         <p class="coupon-desc">${c.desc}</p>
-                        <div class="coupon-footer">
-                            <div class="coupon-qty">
-                                <span class="qty-label">剩餘次數</span>
-                                <span class="qty-value${depleted ? ' zero' : ''}">${qty}</span>
-                            </div>
-                            <button class="redeem-btn" data-id="${c.id}" ${depleted ? 'disabled' : ''}>
-                                ${depleted ? '已用完' : '兌換'}
-                            </button>
-                        </div>
+                        ${cardFooter}
                     </div>
                 `;
 
@@ -722,7 +808,11 @@
             });
 
             grid.querySelectorAll('.redeem-btn:not(:disabled)').forEach(btn => {
-                btn.addEventListener('click', () => openDialog(btn.dataset.id));
+                if (btn.dataset.envelope) {
+                    btn.addEventListener('click', openEnvelopeDialog);
+                } else {
+                    btn.addEventListener('click', () => openDialog(btn.dataset.id));
+                }
             });
 
             document.dispatchEvent(new CustomEvent('coupons-rendered'));
@@ -798,6 +888,42 @@
             clearTimeout(toastTimer);
             toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
         }
+
+        // ── Envelope unlock ──
+        const SECRET_CODE = '0419';
+
+        function openEnvelopeDialog() {
+            document.getElementById('envelope-code').value = '';
+            document.getElementById('envelope-error').textContent = '';
+            document.getElementById('envelope-overlay').classList.add('open');
+            setTimeout(() => document.getElementById('envelope-code').focus(), 280);
+        }
+
+        function closeEnvelopeDialog() {
+            document.getElementById('envelope-overlay').classList.remove('open');
+        }
+
+        function tryOpenEnvelope() {
+            const code = document.getElementById('envelope-code').value.trim();
+            const error = document.getElementById('envelope-error');
+            if (code === SECRET_CODE) {
+                closeEnvelopeDialog();
+                window.location.href = 'letter.html';
+            } else {
+                error.textContent = '數字不對喔，再想想看 🔒';
+                document.getElementById('envelope-code').value = '';
+                document.getElementById('envelope-code').focus();
+            }
+        }
+
+        document.getElementById('envelope-cancel').addEventListener('click', closeEnvelopeDialog);
+        document.getElementById('envelope-overlay').addEventListener('click', e => {
+            if (e.target === e.currentTarget) closeEnvelopeDialog();
+        });
+        document.getElementById('envelope-open').addEventListener('click', tryOpenEnvelope);
+        document.getElementById('envelope-code').addEventListener('keydown', e => {
+            if (e.key === 'Enter') tryOpenEnvelope();
+        });
 
         render();
     </script>
