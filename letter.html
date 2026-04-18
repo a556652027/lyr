@@ -15,167 +15,45 @@
         html::-webkit-scrollbar, body::-webkit-scrollbar { width: 0; height: 0; }
 
         body {
-            font-family: Arial, sans-serif;
             background:
                 radial-gradient(circle at top, rgba(255,255,255,0.18), transparent 35%),
                 linear-gradient(135deg, #32193d 0%, #7b3f78 42%, #f06795 100%);
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             padding: 40px 20px;
         }
 
-        .letter-wrapper {
-            max-width: 560px;
+        .letter-img {
+            max-width: min(560px, 92vw);
             width: 100%;
-            animation: letterReveal 0.8s cubic-bezier(.34,1.56,.64,1) both;
+            display: block;
+            border-radius: 16px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.45);
+            animation: reveal 0.8s cubic-bezier(.34,1.56,.64,1) both;
         }
 
-        @keyframes letterReveal {
+        @keyframes reveal {
             from { opacity: 0; transform: translateY(40px) scale(0.94); }
             to   { opacity: 1; transform: translateY(0) scale(1); }
         }
 
-        .envelope-top {
-            text-align: center;
-            margin-bottom: 24px;
-        }
-
-        .envelope-open-icon {
-            font-size: 4rem;
-            display: inline-block;
-            animation: envelopeOpen 0.6s ease 0.3s both;
-        }
-
-        @keyframes envelopeOpen {
-            from { transform: scale(0.5) rotate(-10deg); opacity: 0; }
-            to   { transform: scale(1) rotate(0deg); opacity: 1; }
-        }
-
-        .envelope-label {
-            margin-top: 8px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            letter-spacing: 0.3em;
-            text-transform: uppercase;
-            color: #ffd7ea;
-        }
-
-        .letter-paper {
-            background: #fff9f5;
-            border-radius: 20px;
-            padding: 44px 40px 48px;
-            box-shadow:
-                0 30px 80px rgba(0,0,0,0.45),
-                0 0 0 1px rgba(255,255,255,0.15);
-            color: #3a1a28;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .letter-paper::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 6px;
-            background: linear-gradient(90deg, #f06795, #c06c84, #6c5ce7, #a29bfe, #f06795);
-            background-size: 200% 100%;
-            animation: rainbow 4s linear infinite;
-        }
-
-        @keyframes rainbow {
-            from { background-position: 0% 0%; }
-            to   { background-position: 200% 0%; }
-        }
-
-        .letter-date {
-            font-size: 0.85rem;
-            color: #b07090;
-            text-align: right;
-            margin-bottom: 28px;
-            font-style: italic;
-        }
-
-        .letter-salutation {
-            font-size: 1.15rem;
-            font-weight: 700;
-            color: #6c5ce7;
-            margin-bottom: 20px;
-        }
-
-        .letter-body {
-            font-size: 1rem;
-            line-height: 1.9;
-            color: #3a1a28;
-            white-space: pre-wrap;
-        }
-
-        .letter-body p + p {
-            margin-top: 16px;
-        }
-
-        .letter-sign {
-            margin-top: 32px;
-            text-align: right;
-        }
-
-        .letter-sign-name {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #c06c84;
-        }
-
-        .letter-sign-sub {
-            font-size: 0.85rem;
-            color: #b07090;
-            margin-top: 4px;
-        }
-
-        .letter-footer {
-            text-align: center;
-            margin-top: 32px;
-        }
-
         .back-link {
+            margin-top: 28px;
             color: rgba(255,255,255,0.5);
             text-decoration: none;
+            font-family: Arial, sans-serif;
             font-size: 0.9rem;
             transition: color 180ms ease;
         }
 
         .back-link:hover { color: #ffd7ea; }
-
-        @media (max-width: 600px) {
-            .letter-paper { padding: 32px 24px 36px; }
-        }
     </style>
 </head>
 <body>
-    <div class="letter-wrapper">
-        <div class="envelope-top">
-            <span class="envelope-open-icon">💌</span>
-            <p class="envelope-label">來自 Kuromi 的信</p>
-        </div>
-
-        <div class="letter-paper">
-            <p class="letter-date">2026 · 04 · 19</p>
-            <p class="letter-salutation">親愛的你，</p>
-            <div class="letter-body">
-                <p>生日快樂！🎉</p>
-                <p>本大王 Kuromi 特地從黑暗王國趕來，就是為了告訴你——你今天是全宇宙最特別的人。</p>
-                <p>希望這一年，你能得到所有想要的東西，笑聲多一點，煩惱少一點，偶爾也可以像我一樣酷一點 🖤</p>
-                <p>這份禮物是我精心準備的，收下吧，別客氣。</p>
-            </div>
-            <div class="letter-sign">
-                <p class="letter-sign-name">Kuromi ✨</p>
-                <p class="letter-sign-sub">（才不是因為喜歡你才寫的）</p>
-            </div>
-        </div>
-
-        <div class="letter-footer">
-            <a class="back-link" href="second.html">← 返回兌換券</a>
-        </div>
-    </div>
+    <img class="letter-img" src="img/kuromi-letter.png" alt="來自 Kuromi 的信">
+    <a class="back-link" href="second.html">← 返回兌換券</a>
 </body>
 </html>
