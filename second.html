@@ -873,6 +873,9 @@ const SideNavCursor = {
                 let rightTimer = null;
 
                 function triggerLeft() {
+                    clearTimeout(rightTimer);
+                    isKuromiRightVisible.value = false;
+                    isRightBubbleVisible.value = false;
                     isKuromiLeftVisible.value = true;
                     isLeftBubbleVisible.value = true;
                     clearTimeout(leftTimer);
@@ -883,6 +886,9 @@ const SideNavCursor = {
                 }
 
                 function triggerRight() {
+                    clearTimeout(leftTimer);
+                    isKuromiLeftVisible.value = false;
+                    isLeftBubbleVisible.value = false;
                     isKuromiRightVisible.value = true;
                     isRightBubbleVisible.value = true;
                     clearTimeout(rightTimer);
