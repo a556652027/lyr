@@ -652,14 +652,14 @@
             {
                 id: 'coupon_b',
                 title: '天香五號兌換券',
-                desc: '這裡放兌換券 B 的說明文字，可以描述內容、使用條件或期限。',
+                desc: '甜甜的濾嘴、淡淡的憂傷，心情不好的時候來個幾根。',
                 img: 'img/coupon-five.png',
                 total: 5
             },
             {
                 id: 'coupon_c',
                 title: '神秘禮物兌換券',
-                desc: '這裡放兌換券 C 的說明文字，可以描述內容、使用條件或期限。',
+                desc: '？？？？？？？？',
                 img: 'img/coupon-surprise.png',
                 total: 1
             }
@@ -692,11 +692,11 @@
                 const card = document.createElement('article');
                 card.className = 'coupon' + (depleted ? ' depleted' : '');
 
-                const leftAnchor = index === 1
-                    ? '<span class="popup-trigger-anchor" data-kuromi-left-anchor="coupon2" aria-hidden="true"></span>'
+                const leftAnchor = index === 0
+                    ? '<span class="popup-trigger-anchor" data-kuromi-left-anchor="coupon1" aria-hidden="true"></span>'
                     : '';
-                const rightAnchor = index === 2
-                    ? '<span class="popup-trigger-anchor" data-kuromi-right-anchor="coupon3" aria-hidden="true"></span>'
+                const rightAnchor = index === 1
+                    ? '<span class="popup-trigger-anchor" data-kuromi-right-anchor="coupon2" aria-hidden="true"></span>'
                     : '';
 
                 card.innerHTML = `
@@ -807,7 +807,7 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <script>
     (() => {
-        const { createApp, ref, watch, onMounted, onBeforeUnmount } = Vue;
+        const { createApp, ref, onMounted, onBeforeUnmount } = Vue;
 
         // ── 氣泡對話框文字（可自由編輯）──
         const BUBBLE_LEFT  = '本大王來了！\n這樣的驚喜喜歡嗎？';
@@ -867,11 +867,36 @@ const SideNavCursor = {
                 let leftObserver = null;
                 let rightObserver = null;
 
-                function makeObserver(selector, stateRef) {
+                const isLeftBubbleVisible  = ref(false);
+                const isRightBubbleVisible = ref(false);
+                let leftTimer  = null;
+                let rightTimer = null;
+
+                function triggerLeft() {
+                    isKuromiLeftVisible.value = true;
+                    isLeftBubbleVisible.value = true;
+                    clearTimeout(leftTimer);
+                    leftTimer = setTimeout(() => {
+                        isKuromiLeftVisible.value = false;
+                        isLeftBubbleVisible.value = false;
+                    }, BUBBLE_DURATION);
+                }
+
+                function triggerRight() {
+                    isKuromiRightVisible.value = true;
+                    isRightBubbleVisible.value = true;
+                    clearTimeout(rightTimer);
+                    rightTimer = setTimeout(() => {
+                        isKuromiRightVisible.value = false;
+                        isRightBubbleVisible.value = false;
+                    }, BUBBLE_DURATION);
+                }
+
+                function makeObserver(selector, onEnter) {
                     const el = document.querySelector(selector);
                     if (!el || typeof IntersectionObserver !== 'function') return null;
                     const obs = new IntersectionObserver(
-                        ([entry]) => { stateRef.value = Boolean(entry && entry.isIntersecting); },
+                        ([entry]) => { if (entry && entry.isIntersecting) onEnter(); },
                         { root: null, rootMargin: '-20% 0px -20% 0px', threshold: 0 }
                     );
                     obs.observe(el);
@@ -881,35 +906,21 @@ const SideNavCursor = {
                 function setupObservers() {
                     if (leftObserver)  { leftObserver.disconnect();  leftObserver = null; }
                     if (rightObserver) { rightObserver.disconnect(); rightObserver = null; }
-                    leftObserver  = makeObserver('[data-kuromi-left-anchor]',  isKuromiLeftVisible);
-                    rightObserver = makeObserver('[data-kuromi-right-anchor]', isKuromiRightVisible);
-                }
-
-                const isLeftBubbleVisible  = ref(false);
-                const isRightBubbleVisible = ref(false);
-                const leftTimerRef  = { value: null };
-                const rightTimerRef = { value: null };
-
-                function showBubble(visibleRef, timerRef) {
-                    visibleRef.value = true;
-                    clearTimeout(timerRef.value);
-                    timerRef.value = setTimeout(() => { visibleRef.value = false; }, BUBBLE_DURATION);
+                    leftObserver  = makeObserver('[data-kuromi-left-anchor]',  triggerLeft);
+                    rightObserver = makeObserver('[data-kuromi-right-anchor]', triggerRight);
                 }
 
                 onMounted(() => {
                     setupObservers();
                     document.addEventListener('coupons-rendered', setupObservers);
-
-                    watch(isKuromiLeftVisible,  v => { if (v) showBubble(isLeftBubbleVisible,  leftTimerRef); });
-                    watch(isKuromiRightVisible, v => { if (v) showBubble(isRightBubbleVisible, rightTimerRef); });
                 });
 
                 onBeforeUnmount(() => {
                     document.removeEventListener('coupons-rendered', setupObservers);
                     if (leftObserver)  { leftObserver.disconnect();  leftObserver = null; }
                     if (rightObserver) { rightObserver.disconnect(); rightObserver = null; }
-                    clearTimeout(leftTimerRef.value);
-                    clearTimeout(rightTimerRef.value);
+                    clearTimeout(leftTimer);
+                    clearTimeout(rightTimer);
                 });
 
                 return {
