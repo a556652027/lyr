@@ -129,7 +129,7 @@
         },
         template: `
             <div class="bottom-action-layer" :class="{ 'is-visible': visible }" :aria-hidden="String(!visible)">
-                <a class="bottom-jump-btn" :href="href" :tabindex="visible ? 0 : -1">兌換券</a>
+                <a class="bottom-jump-btn" :href="href" :tabindex="visible ? 0 : -1">點我</a>
             </div>
         `
     };
